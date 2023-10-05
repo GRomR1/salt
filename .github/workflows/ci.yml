@@ -42,13 +42,11 @@ jobs:
       runners: ${{ steps.runner-types.outputs.runners }}
       changed-files: ${{ steps.process-changed-files.outputs.changed-files }}
       pull-labels: ${{ steps.get-pull-labels.outputs.labels }}
-      testrun: ${{ steps.define-testrun.outputs.testrun }}
       salt-version: ${{ steps.setup-salt-version.outputs.salt-version }}
       cache-seed: ${{ steps.set-cache-seed.outputs.cache-seed }}
       latest-release: ${{ steps.get-salt-releases.outputs.latest-release }}
       releases: ${{ steps.get-salt-releases.outputs.releases }}
       release-changelog-target: ${{ steps.get-release-changelog-target.outputs.release-changelog-target }}
-      testing-releases: ${{ steps.get-testing-releases.outputs.testing-releases }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -218,32 +216,6 @@ jobs:
           echo '${{ steps.get-salt-releases.outputs.latest-release }}' | jq -C '.'
           echo '${{ steps.get-salt-releases.outputs.releases }}' | jq -C '.'
           echo '${{ steps.get-testing-releases.outputs.testing-releases }}' | jq -C '.'
-
-      - name: Define Testrun
-        id: define-testrun
-        run: |
-          tools ci define-testrun ${{ github.event_name }} changed-files.json
-
-      - name: Check Defined Test Run
-        run: |
-          echo '${{ steps.define-testrun.outputs.testrun }}' | jq -C '.'
-
-      - name: Check Contents of generated testrun-changed-files.txt
-        if: ${{ fromJSON(steps.define-testrun.outputs.testrun)['type'] != 'full' }}
-        run: |
-          cat testrun-changed-files.txt || true
-
-      - name: Upload testrun-changed-files.txt
-        if: ${{ fromJSON(steps.define-testrun.outputs.testrun)['type'] != 'full' }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: testrun-changed-files.txt
-          path: testrun-changed-files.txt
-
-      - name: Get Release Changelog Target
-        id: get-release-changelog-target
-        run: |
-          tools ci get-release-changelog-target ${{ github.event_name }}
   pre-commit:
     name: Pre-Commit
     if: ${{ fromJSON(needs.prepare-workflow.outputs.runners)['github-hosted'] }}
