@@ -253,10 +253,10 @@ jobs:
           path: .tools-venvs/build
           key: ${{ needs.prepare-workflow.outputs.cache-seed }}|${{ github.workflow }}|${{ github.job }}|tools-venvs|${{ steps.python-tools-scripts.outputs.version }}|build|${{ steps.get-python-version.outputs.version }}|${{ hashFiles('requirements/**/build.txt') }}
 
-      # - name: Build Source Tarball
-      #   uses: ./.github/actions/build-source-tarball
-      #   with:
-      #     salt-version: "${{ needs.prepare-workflow.outputs.salt-version }}"
+      - name: Build Source Tarball
+        uses: ./.github/actions/build-source-tarball
+        with:
+          salt-version: "${{ needs.prepare-workflow.outputs.salt-version }}"
 
   build-deps-onedir:
     name: Build Dependencies Onedir
