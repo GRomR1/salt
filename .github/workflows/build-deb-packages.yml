@@ -28,7 +28,7 @@ jobs:
           - x86_64
         source:
           - onedir
-          - src
+          # - src
 
     container:
       image: ghcr.io/saltstack/salt-ci-containers/packaging:debian-12
@@ -50,12 +50,12 @@ jobs:
           name: salt-${{ inputs.salt-version }}-onedir-linux-${{ matrix.arch }}.tar.xz
           path: pkgs/checkout/artifacts/
 
-      - name: Download Release Patch
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        uses: actions/download-artifact@v3
-        with:
-          name: salt-${{ inputs.salt-version }}.patch
-          path: pkgs/checkout/
+      # - name: Download Release Patch
+      #   if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     name: salt-${{ inputs.salt-version }}.patch
+      #     path: pkgs/checkout/
 
       - name: Setup Python Tools Scripts
         uses: ./.github/actions/setup-python-tools-scripts
