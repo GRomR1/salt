@@ -20,10 +20,7 @@ on:
 jobs:
   build:
     name: DEB
-    runs-on:
-      - self-hosted
-      - linux
-      - ${{ matrix.arch }}
+    runs-on: 'ubuntu-latest'
     strategy:
       fail-fast: false
       matrix:
