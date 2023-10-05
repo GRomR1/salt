@@ -216,25 +216,6 @@ jobs:
           echo '${{ steps.get-salt-releases.outputs.latest-release }}' | jq -C '.'
           echo '${{ steps.get-salt-releases.outputs.releases }}' | jq -C '.'
           echo '${{ steps.get-testing-releases.outputs.testing-releases }}' | jq -C '.'
-  pre-commit:
-    name: Pre-Commit
-    if: ${{ fromJSON(needs.prepare-workflow.outputs.runners)['github-hosted'] }}
-    uses: ./.github/workflows/pre-commit-action.yml
-    needs:
-      - prepare-workflow
-    with:
-      cache-seed: ${{ needs.prepare-workflow.outputs.cache-seed }}
-      changed-files: ${{ needs.prepare-workflow.outputs.changed-files }}
-      pre-commit-version: "3.0.4"
-
-  lint:
-    name: Lint
-    if: ${{ fromJSON(needs.prepare-workflow.outputs.jobs)['lint'] && fromJSON(needs.prepare-workflow.outputs.runners)['github-hosted'] }}
-    uses: ./.github/workflows/lint-action.yml
-    needs:
-      - prepare-workflow
-    with:
-      changed-files: ${{ needs.prepare-workflow.outputs.changed-files }}
 
   prepare-release:
     name: "Prepare Release: ${{ needs.prepare-workflow.outputs.salt-version }}"
@@ -370,17 +351,6 @@ jobs:
           path: salt-${{ needs.prepare-workflow.outputs.salt-version }}.patch
           retention-days: 7
           if-no-files-found: error
-
-  build-docs:
-    name: Documentation
-    if: ${{ fromJSON(needs.prepare-workflow.outputs.jobs)['build-docs'] && fromJSON(needs.prepare-workflow.outputs.runners)['self-hosted'] }}
-    needs:
-      - prepare-workflow
-      - build-source-tarball
-    uses: ./.github/workflows/build-docs.yml
-    with:
-      cache-seed: ${{ needs.prepare-workflow.outputs.cache-seed }}
-      salt-version: "${{ needs.prepare-workflow.outputs.salt-version }}"
 
   build-source-tarball:
     name: Build Source Tarball
