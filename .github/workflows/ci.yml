@@ -36,7 +36,7 @@ jobs:
 
   prepare-workflow:
     name: Prepare Workflow Run
-    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted", "linux", "x86_64"]') || 'ubuntu-latest' }}
+    runs-on: 'ubuntu-latest'
     outputs:
       jobs: ${{ steps.define-jobs.outputs.jobs }}
       runners: ${{ steps.runner-types.outputs.runners }}
@@ -217,148 +217,12 @@ jobs:
           echo '${{ steps.get-salt-releases.outputs.releases }}' | jq -C '.'
           echo '${{ steps.get-testing-releases.outputs.testing-releases }}' | jq -C '.'
 
-  prepare-release:
-    name: "Prepare Release: ${{ needs.prepare-workflow.outputs.salt-version }}"
-    if: ${{ fromJSON(needs.prepare-workflow.outputs.jobs)['prepare-release'] && fromJSON(needs.prepare-workflow.outputs.runners)['github-hosted'] }}
-    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted", "linux", "medium", "x86_64"]') || 'ubuntu-latest' }}
-    needs:
-      - prepare-workflow
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Get Python Version
-        id: get-python-version
-        uses: ./.github/actions/get-python-version
-        with:
-          python-binary: python3
-
-      - name: Setup Python Tools Scripts
-        id: python-tools-scripts
-        uses: ./.github/actions/setup-python-tools-scripts
-
-      - name: Cache Python Tools Docs Virtualenv
-        uses: actions/cache@v3
-        with:
-          path: .tools-venvs/docs
-          key: ${{ needs.prepare-workflow.outputs.cache-seed }}|${{ github.workflow }}|${{ github.job }}|tools-venvs|${{ steps.python-tools-scripts.outputs.version }}|docs|${{ steps.get-python-version.outputs.version }}|${{ hashFiles('requirements/**/docs.txt') }}
-
-      - name: Cache Python Tools Changelog Virtualenv
-        uses: actions/cache@v3
-        with:
-          path: .tools-venvs/changelog
-          key: ${{ needs.prepare-workflow.outputs.cache-seed }}|${{ github.workflow }}|${{ github.job }}|tools-venvs|${{ steps.python-tools-scripts.outputs.version }}|changelog|${{ steps.get-python-version.outputs.version }}|${{ hashFiles('requirements/**/changelog.txt') }}
-
-
-      - name: Setup Salt Version
-        id: setup-salt-version
-        uses: ./.github/actions/setup-salt-version
-        with:
-          salt-version: "${{ needs.prepare-workflow.outputs.salt-version }}"
-
-      - name: Update Debian changelog
-        shell: bash
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        run: |
-          tools changelog update-deb --draft
-          tools changelog update-deb
-
-      - name: Update RPM changelog
-        shell: bash
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        run: |
-          tools changelog update-rpm --draft
-          tools changelog update-rpm
-
-      - name: Create Release Notes Template
-        shell: bash
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        run: |
-          if [ "${{ needs.prepare-workflow.outputs.release-changelog-target }}" == "next-major-release" ]; then
-            tools changelog update-release-notes --next-release --template-only
-          else
-            tools changelog update-release-notes --template-only
-          fi
-
-      - name: Update Release Notes
-        shell: bash
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        run: |
-          if [ "${{ needs.prepare-workflow.outputs.release-changelog-target }}" == "next-major-release" ]; then
-              tools changelog update-release-notes --draft --next-release
-              tools changelog update-release-notes --next-release
-          else
-              tools changelog update-release-notes --draft
-              tools changelog update-release-notes
-          fi
-
-      - name: Generate MAN Pages
-        shell: bash
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        env:
-          LATEST_RELEASE: "${{ needs.prepare-workflow.outputs.salt-version }}"
-          SALT_ON_SALTSTACK: "1"
-        run: |
-          tools docs man
-
-      - name: Update Changelog
-        shell: bash
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        run: |
-          tools changelog update-changelog-md --draft
-          tools changelog update-changelog-md
-
-      - name: Show Changes Diff
-        shell: bash
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        run: |
-          git diff --color
-
-      - name: Configure Git
-        shell: bash
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        run: |
-          git config --global user.name "Salt Project Packaging"
-          git config --global user.email saltproject-packaging@vmware.com
-
-      - name: Setup Pre-Commit
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        uses: ./.github/actions/setup-pre-commit
-        with:
-          version: "3.0.4"
-          cache-seed: ${{ needs.prepare-workflow.outputs.cache-seed }}
-
-      - name: Commit Changes
-        shell: bash
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        env:
-          SKIP: lint-salt,lint-tests
-        run: |
-          # Run it twice so that pre-commit can fix anything that can be automatically fixed.
-          git commit -am "Release v${{ needs.prepare-workflow.outputs.salt-version }}" || \
-            git commit -am "Release v${{ needs.prepare-workflow.outputs.salt-version }}"
-
-      - name: Create release changes patch
-        shell: bash
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        run: |
-          git format-patch --keep-subject --binary --stdout HEAD^ > salt-${{ needs.prepare-workflow.outputs.salt-version }}.patch
-
-      - name: Upload Changes Diff Artifact
-        uses: actions/upload-artifact@v3
-        if: ${{ startsWith(github.event.ref, 'refs/tags') == false }}
-        with:
-          name: salt-${{ needs.prepare-workflow.outputs.salt-version }}.patch
-          path: salt-${{ needs.prepare-workflow.outputs.salt-version }}.patch
-          retention-days: 7
-          if-no-files-found: error
-
   build-source-tarball:
     name: Build Source Tarball
-    if: ${{ fromJSON(needs.prepare-workflow.outputs.jobs)['build-source-tarball'] && fromJSON(needs.prepare-workflow.outputs.runners)['github-hosted'] }}
+    if: ${{ fromJSON(needs.prepare-workflow.outputs.jobs)['build-source-tarball'] }}
     needs:
       - prepare-workflow
-      - prepare-release
-    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted", "linux", "medium", "x86_64"]') || 'ubuntu-latest' }}
+    runs-on: 'ubuntu-latest'
     steps:
       - uses: actions/checkout@v3
 
@@ -396,7 +260,7 @@ jobs:
 
   build-deps-onedir:
     name: Build Dependencies Onedir
-    if: ${{ fromJSON(needs.prepare-workflow.outputs.jobs)['build-deps-onedir'] && fromJSON(needs.prepare-workflow.outputs.runners)['self-hosted'] }}
+    if: ${{ fromJSON(needs.prepare-workflow.outputs.jobs)['build-deps-onedir'] }}
     needs:
       - prepare-workflow
     uses: ./.github/workflows/build-deps-onedir.yml
@@ -426,7 +290,7 @@ jobs:
 
   build-deb-pkgs:
     name: Build DEB Packages
-    if: ${{ fromJSON(needs.prepare-workflow.outputs.jobs)['build-pkgs'] && fromJSON(needs.prepare-workflow.outputs.runners)['self-hosted'] }}
+    if: ${{ fromJSON(needs.prepare-workflow.outputs.jobs)['build-pkgs'] }}
     needs:
       - prepare-workflow
       - build-salt-onedir
