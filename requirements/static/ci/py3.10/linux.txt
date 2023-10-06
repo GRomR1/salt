@@ -625,6 +625,7 @@ zipp==3.15.0
     # via
     #   -c requirements/static/ci/../pkg/py3.10/linux.txt
     #   importlib-metadata
+python-ldap=3.4.3
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
