@@ -55,6 +55,11 @@ jobs:
       - name: Setup Python Tools Scripts
         uses: ./.github/actions/setup-python-tools-scripts
 
+      - name: APT install required packages
+        uses: ConorMacBride/install-package@v1
+        with:
+          apt: build-essential python3-pip python3-dev ldap-utils libldap2-dev libsasl2-dev
+
       - name: Install Salt Packaging Dependencies into Relenv Onedir
         uses: ./.github/actions/build-onedir-deps
         with:
