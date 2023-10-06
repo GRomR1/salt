@@ -51,6 +51,11 @@ runs:
             'cicd/shared-gh-workflows-context.yml'
           ) }}
 
+    - name: APT install required packages
+      uses: ConorMacBride/install-package@v1
+      with:
+        apt: build-essential python3-pip python3-dev ldap-utils libldap2-dev libsasl2-dev
+
     - name: Install Salt Onedir Package Dependencies
       shell: bash
       if: steps.onedir-pkg-cache.outputs.cache-hit != 'true'
