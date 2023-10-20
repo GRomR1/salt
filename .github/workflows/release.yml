@@ -59,7 +59,7 @@ jobs:
       latest-release: ${{ steps.get-salt-releases.outputs.latest-release }}
       releases: ${{ steps.get-salt-releases.outputs.releases }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Full clone to also get the tags to get the right salt version
 
@@ -112,7 +112,7 @@ jobs:
       - name: Set Cache Seed Output
         id: set-cache-seed
         run: |
-          echo "cache-seed=${{ env.CACHE_SEED }}" >> "$GITHUB_OUTPUT"
+          tools ci define-cache-seed ${{ env.CACHE_SEED }}
 
   download-onedir-artifact:
     name: Download Staging Onedir Artifact
@@ -131,7 +131,7 @@ jobs:
           - platform: linux
             arch: x86_64
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Python Tools Scripts
         uses: ./.github/actions/setup-python-tools-scripts
